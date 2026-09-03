@@ -1,0 +1,41 @@
+{
+  "name": "@mixos-go/shopee-sdk",
+  "version": "1.0.0",
+  "description": "Generated TypeScript SDK for the Shopee Open Platform API v2 (444 APIs / 29 categories)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "generate": "node scripts/generate.cjs",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "smoke": "npm run build && node scripts/smoke.cjs",
+    "prepublishOnly": "npm run generate && npm run build"
+  },
+  "keywords": [
+    "shopee",
+    "open-platform",
+    "openapi",
+    "sdk",
+    "ecommerce"
+  ],
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}
