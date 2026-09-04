@@ -112,9 +112,12 @@ Perlu mekanisme agar token bisa di-inject/refresh runtime per-request:
 
 ## Fase 3 — Multi-seller switch
 
-- [ ] Pastikan `getClient(shopId)` untuk shop berbeda menghasilkan client dgn token sendiri-sendiri
-      (tidak tercampur). Test isolasi antar shop.
-- [ ] `buildAuthUrl` untuk shop baru (belum ada token) vs shop yang sudah connect harus konsisten.
+- [x] `getClient(shopId)` utk shop berbeda menghasilkan client dgn token sendiri-sendiri. Terverifikasi
+      manual: shop 1001 & 1002 → request membawa `access_token=atA/atB` + `shop_id=1001/1002` (tidak
+      tercampur). **Bonus bug fix**: `updateToken` kini tidak menimpa `shopId` default (sebelumnya
+      set `shopId: undefined` → request kehilangan `shop_id`), lihat `src/client.ts`.
+- [x] `buildAuthUrl` utk shop baru (belum connect) vs shop sudah connect konsisten: `shopId` &
+      `state` disisipkan ke query redirect (ter-encode) dengan cara sama.
 
 ## Fase 4 — Testing (connector)
 
