@@ -119,9 +119,13 @@ export class ShopeeClient {
   /**
    * Update the default access_token/shop_id at runtime (used by the connector
    * after an auto-refresh so subsequent calls sign with the fresh token).
+   * Hanya field yang diberikan yang diganti; field lain tidak tersentuh.
    */
   updateToken(accessToken?: string, shopId?: number): void {
-    this.defaults = { ...this.defaults, accessToken, shopId }
+    const next = { ...this.defaults }
+    if (accessToken !== undefined) next.accessToken = accessToken
+    if (shopId !== undefined) next.shopId = shopId
+    this.defaults = next
   }
 
   private now(): number {
