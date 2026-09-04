@@ -19,6 +19,7 @@
     "generate": "node scripts/generate.cjs",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test \"test/**/*.test.cjs\"",
     "smoke": "npm run build && node scripts/smoke.cjs",
     "prepublishOnly": "npm run generate && npm run build"
   },
