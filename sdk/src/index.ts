@@ -11,6 +11,7 @@ export * from './types'
 export * from './client'
 export * from './endpoints'
 export * from './auth'
+export * from './connector'
 export { ShopeeClient } from './client'
 export { generated }
 

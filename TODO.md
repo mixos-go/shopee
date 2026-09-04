@@ -78,21 +78,21 @@ Kelas `<Platform>Connector` **multi-seller** (satu instance, banyak shop):
 
 ## Fase 1 — Connector core (struktur + contract)
 
-- [ ] `connector/types.ts` — `TokenSet`, `ConnectorConfig` sesuai kontrak di atas; tambah field
-      spesifik Shopee jika perlu (`shopId` di `TokenSet`).
-- [ ] `connector/token-store.ts` — `interface TokenStore` + `InMemoryTokenStore`.
-- [ ] `connector/connector.ts` — class `ShopeeConnector` (multi-seller):
-  - `buildAuthUrl(shopId, state?)` → pakai `buildAuthUrl()` yang sudah ada di `src/auth.ts`.
-  - `handleCallback(shopId, code)` → panggil `shopee.publicApi.getAccessToken({ code, partnner_id, shop_id })`,
-    simpan `TokenSet` (access_token, refresh_token, expiresAt dari `expire_in`) ke store.
-  - `refresh(shopId)` → panggil `shopee.publicApi.refreshAccessToken({ refresh_token, partner_id, shop_id })`,
-    update store (refresh_token single-use → selalu pakai yang baru).
-  - `getClient(shopId)` → return `ShopeeClient` yang auto-inject shopId+accessToken & auto-refresh
-    sebelum expiry (lihat Fase 3).
-  - `listShopIds()`.
-- [ ] `connector/index.ts` — `createShopeeConnector(config)`.
-- [ ] Ekspor connector dari `src/index.ts` (`export { ShopeeConnector, createShopeeConnector }`,
-      `export * from './connector/types'`, `export * from './connector/token-store'`).
+- [x] `connector/types.ts` — `TokenSet`, `ShopeeConnectorConfig` sesuai kontrak di atas; tambah field
+      spesifik Shopee (`shopId` (number), `region` di `TokenSet`).
+- [x] `connector/token-store.ts` — `interface TokenStore` + `InMemoryTokenStore` (dengan `keys()`).
+- [x] `connector/connector.ts` — class `ShopeeConnector` (multi-seller):
+  - `buildAuthUrl(shopId, state?)` → pakai `buildAuthUrl()` yang sudah ada di `src/auth.ts`;
+    `shopId` & `state` disisipkan ke query redirect.
+  - `handleCallback(shopId, code)` → exchange code via spec sendiri (token/get) karena generated
+    `GetAccessTokenRequest` tidak punya `shop_id`, simpan `TokenSet` (access_token, refresh_token,
+    expiresAt dari `expire_in`) ke store.
+  - `refresh(shopId)` → `refreshAccessToken` via spec sendiri, update store (refresh_token single-use).
+  - `getClient(shopId)` (async) → return `ShopeeClient` ter-inject accessToken+shopId. Async karena
+    `TokenStore` bisa async; auto-refresh saat expiry menyusul di Fase 2.
+  - `listShopIds()` — union dari `keys()` store + Set internal connector.
+- [x] `connector/index.ts` — `createShopeeConnector(config)`.
+- [x] Ekspor connector dari `src/index.ts` (`export * from './connector'`).
 
 ## Fase 2 — Token injection & auto-refresh runtime
 
