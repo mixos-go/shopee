@@ -121,15 +121,16 @@ Perlu mekanisme agar token bisa di-inject/refresh runtime per-request:
 
 ## Fase 4 — Testing (connector)
 
-- [ ] Unit test `TokenStore` (in-memory get/set/delete).
-- [ ] Unit test `ShopeeConnector` pakai mock (tanpa hit API asli):
-  - buildAuthUrl menghasilkan URL valid + `state`.
-  - handleCallback → exchange code yang benar + token tersimpan (parse `expire_in` → `expiresAt`).
+- [x] Unit test `TokenStore` (in-memory get/set/delete).
+- [x] Unit test `ShopeeConnector` pakai mock (tanpa hit API asli) — `sdk/test/connector.test.cjs`
+      (`npm test`, node:test, 9 test hijau):
+  - buildAuthUrl menghasilkan URL valid + `state` (shop_id & state di query redirect).
+  - handleCallback → exchange code + token tersimpan (parse `expire_in` → `expiresAt`).
   - refresh → refresh_token baru dipakai, store ter-update.
-  - auto-refresh saat `expiresAt` mendekat.
-  - error path: token habis / belum ada → error jelas.
-- [ ] Unit test isolasi multi-seller (2 shop, token tidak saling timpa).
-- [ ] Smoke test connector (opsional, pakai kredensial sandbox bila tersedia).
+  - auto-refresh single-flight saat `expiresAt` mendekat (3 request paralel → 1 refresh).
+  - error path: token habis / belum ada → `ShopeeError` jelas.
+- [x] Unit test isolasi multi-seller (2 shop, token tidak saling timpa).
+- [x] Smoke test signing tetap hijau (`npm run smoke` pass; test `sign()` deterministik hex 64).
 
 ## Fase 5 — Docs & release
 
