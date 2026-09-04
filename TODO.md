@@ -137,7 +137,7 @@ Perlu mekanisme agar token bisa di-inject/refresh runtime per-request:
 - [x] Update `sdk/README.md`: bagian **Connector multi-seller (OAuth + auto-refresh)** — contoh
       buildAuthUrl → handleCallback → getClient → auto-refresh → listShopIds.
 - [x] Update `SKILL.md` atau doc referensi jika perlu (tidak ada perubahan; README sudah cukup).
-- [ ] Bump version + publish ke GitHub Packages (ditunda: butuh kredensial publish).
+- [x] Bump version ke 1.1.0 + publish ke GitHub Packages (@mixos-go/shopee-sdk@1.1.0).
 
 ---
 
