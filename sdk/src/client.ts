@@ -78,6 +78,11 @@ export interface ShopeeClientConfig {
   fetch?: typeof fetch
   /** Response ttl in ms until throwing on non-2xx (default false). */
   throwOnHttpError?: boolean
+  /**
+   * Optional hook invoked at the start of every `request()`. The connector uses
+   * this to check token expiry and auto-refresh (single-flight) before a call.
+   */
+  beforeRequest?: () => Promise<void>
 }
 
 /**
@@ -91,9 +96,10 @@ export class ShopeeClient {
   readonly environment: ShopeeEnvironment
   readonly region: ShopeeRegion | string
   private readonly credentials: ShopeeCredentials
-  private readonly defaults: { accessToken?: string; shopId?: number }
+  private defaults: { accessToken?: string; shopId?: number }
   private readonly fetchImpl: typeof fetch
   private readonly throwOnHttpError: boolean
+  private readonly beforeRequest?: () => Promise<void>
 
   constructor(cfg: ShopeeClientConfig) {
     this.credentials = cfg.credentials
@@ -102,11 +108,20 @@ export class ShopeeClient {
     this.defaults = { accessToken: cfg.accessToken, shopId: cfg.shopId }
     this.fetchImpl = cfg.fetch ?? (globalThis as any).fetch
     this.throwOnHttpError = cfg.throwOnHttpError ?? false
+    this.beforeRequest = cfg.beforeRequest
     if (typeof this.fetchImpl !== 'function') {
       throw new Error(
         'Fetch is not available. Use Node 18+ or supply a `fetch` implementation in the client config.',
       )
     }
+  }
+
+  /**
+   * Update the default access_token/shop_id at runtime (used by the connector
+   * after an auto-refresh so subsequent calls sign with the fresh token).
+   */
+  updateToken(accessToken?: string, shopId?: number): void {
+    this.defaults = { ...this.defaults, accessToken, shopId }
   }
 
   private now(): number {
@@ -131,6 +146,7 @@ export class ShopeeClient {
     params: Record<string, unknown>,
     opts: ShopeeRequestOptions = {},
   ): Promise<any> {
+    await this.beforeRequest?.()
     const environment = opts.environment ?? this.environment
     const region = (opts.region ?? this.region).toUpperCase() as ShopeeRegion
     const host = resolveHost(environment, region)

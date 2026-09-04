@@ -99,13 +99,16 @@ Kelas `<Platform>Connector` **multi-seller** (satu instance, banyak shop):
 Client saat ini set token sebagai `accessToken`/`shopId` statis (readonly) di `ShopeeClientConfig`.
 Perlu mekanisme agar token bisa di-inject/refresh runtime per-request:
 
-- [ ] Riset & putuskan pendekatan: (a) konstruksi ulang `ShopeeClient` tiap refresh, atau
-      (b) tambah setter/`updateToken` di client, atau (c) `getClient` baru dibuat dari store tiap call.
-      Pilih satu yang tidak merusak API eksisting. Dokumentasikan keputusan di PR description.
-- [ ] Implement auto-refresh: sebelum panggil API, cek `expiresAt`; kalau `< threshold` (mis. 5 menit),
-      panggil `refresh(shopId)` dulu. Handle concurrency (jangan refresh dobel saat paralel).
-- [ ] Race: gunakan in-flight single-flight untuk refresh agar beberapa request paralel tidak
-      memicu refresh berulang.
+- [x] **Keputusan injection (dipilih b)**: `ShopeeClient` (src/client.ts) ditambah optional hook
+      `beforeRequest` (dipanggil di awal tiap `request`) + method `updateToken(accessToken?, shopId?)`
+      (field `defaults` diubah dari `private readonly` → mutable, di-replace via spread). Tidak
+      merusak API eksisting (additif), `credentials`/`environment`/`region` tetap readonly.
+- [x] Implement auto-refresh: `beforeRequest` bawaan connector mengecek `expiresAt` di store; bila
+      `expiresAt - now < refreshThresholdMs` (default 5 mnt) → `refresh(shopId)` dulu lalu
+      `client.updateToken(fresh.accessToken)`; kalau token tak ada → throw error jelas. Terverifikasi
+      manual: 3 request paralel saat expiry mendekat → refresh hanya 1x, 3 call sukses, store ter-update.
+- [x] Race / single-flight: `Map<shopId, Promise<TokenSet>>` `refreshing` + `.finally()` cleanup —
+      request paralel memakai promise refresh yang sama (1x HTTP).
 
 ## Fase 3 — Multi-seller switch
 

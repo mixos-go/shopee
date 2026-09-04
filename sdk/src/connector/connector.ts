@@ -39,6 +39,8 @@ export class ShopeeConnector {
   private readonly store: TokenStore
   private readonly fetchImpl?: typeof fetch
   private readonly shopIds = new Set<string>()
+  /** Single-flight refresh per shop: beberapa request paralel tidak refresh dobel. */
+  private readonly refreshing = new Map<string, Promise<TokenSet>>()
 
   constructor(config: ShopeeConnectorConfig) {
     this.credentials = config.credentials
@@ -87,21 +89,28 @@ export class ShopeeConnector {
 
   /**
    * Client untuk satu shop dengan access token + shop_id ter-inject.
-   * Auto-refresh saat `expiresAt` mendekat dilakukan pada Fase 2 connector.
+   * Sebelum tiap request, `beforeRequest` mengecek `expiresAt`: bila mendekat
+   * (< `refreshThresholdMs`) token di-refresh dulu (single-flight, pakai
+   * refresh_token terbaru di store) lalu token baru di-inject ke client.
    */
   async getClient(shopId: string): Promise<ShopeeClient> {
     const token = await this.store.get(shopId)
     if (token === undefined) {
       throw new ShopeeError(`Shop ${shopId} belum connect. Panggil handleCallback(shopId, code) dulu.`)
     }
-    return new ShopeeClient({
+    const client = new ShopeeClient({
       credentials: this.credentials,
       environment: this.environment,
       region: this.region,
       accessToken: token.accessToken,
       shopId: Number(shopId),
       fetch: this.fetchImpl,
+      beforeRequest: () =>
+        this.ensureFreshToken(shopId).then((fresh) => {
+          client.updateToken(fresh.accessToken)
+        }),
     })
+    return client
   }
 
   /** Daftar shop yang sudah pernah connect (punya token di store). */
@@ -118,6 +127,29 @@ export class ShopeeConnector {
       region: this.region,
       fetch: this.fetchImpl,
     })
+  }
+
+  /** Token saat ini dari store; bila tak ada → error jelas. */
+  private async ensureFreshToken(shopId: string): Promise<TokenSet> {
+    const token = await this.store.get(shopId)
+    if (token === undefined) {
+      throw new ShopeeError(`Shop ${shopId} belum connect. Panggil handleCallback(shopId, code) dulu.`)
+    }
+    const expired =
+      token.expiresAt !== undefined && token.expiresAt - Date.now() < this.refreshThresholdMs
+    if (expired) return this.ensureFresh(shopId)
+    return token
+  }
+
+  /** Auto-refresh single-flight per shop agar request paralel tak refresh dobel. */
+  private ensureFresh(shopId: string): Promise<TokenSet> {
+    const inFlight = this.refreshing.get(shopId)
+    if (inFlight !== undefined) return inFlight
+    const p = this.refresh(shopId).finally(() => {
+      this.refreshing.delete(shopId)
+    })
+    this.refreshing.set(shopId, p)
+    return p
   }
 
   private async exchangeToken(code: string, shopId: string): Promise<TokenSet> {
