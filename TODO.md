@@ -134,9 +134,10 @@ Perlu mekanisme agar token bisa di-inject/refresh runtime per-request:
 
 ## Fase 5 — Docs & release
 
-- [ ] Update `sdk/README.md`: contoh OAuth flow multi-seller (connect shop → callback → refresh → call API).
-- [ ] Update `SKILL.md` atau doc referensi jika perlu.
-- [ ] Bump version + publish ke GitHub Packages.
+- [x] Update `sdk/README.md`: bagian **Connector multi-seller (OAuth + auto-refresh)** — contoh
+      buildAuthUrl → handleCallback → getClient → auto-refresh → listShopIds.
+- [x] Update `SKILL.md` atau doc referensi jika perlu (tidak ada perubahan; README sudah cukup).
+- [ ] Bump version + publish ke GitHub Packages (ditunda: butuh kredensial publish).
 
 ---
 

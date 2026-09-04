@@ -91,6 +91,51 @@ import { verifyPushSignature } from './auth'
 const ok = verifyPushSignature(partnerKey, url, rawBody, authorizationHeader)
 ```
 
+## Connector multi-seller (OAuth + auto-refresh)
+
+Untuk aplikasi yang mengelola **banyak shop sekaligus**, pakai `ShopeeConnector`
+(`src/connector/`). Satu instance, token disimpan per `shopId` di `TokenStore`:
+
+```ts
+import { createShopeeConnector, InMemoryTokenStore } from './connector'
+
+const connector = createShopeeConnector({
+  credentials: { partner_id: 2001887, partner_key: 'YOUR_PARTNER_KEY' },
+  redirectUri: 'https://yourapp.com/callback',
+  environment: 'sandbox',
+  store: new InMemoryTokenStore(), // ganti dgn persisten store (DB) utk production
+})
+
+// 1. Arahkan seller tiap shop ke URL authorize (shop_id & state di query redirect).
+const url = connector.buildAuthUrl('14701711', 'csrf-state')
+//    → https://partner.shopeemobile.com/api/v2/shop/auth_partner?...
+//      ...&redirect=...%3Fshop_id%3D14701711%26state%3Dcsrf-state
+
+// 2. Di callback: tukar code menjadi token (disimpan ke store otomatis).
+const token = await connector.handleCallback('14701711', 'CODE_FROM_REDIRECT')
+//    token = { accessToken, refreshToken, expiresAt }  (expire_in → expiresAt)
+
+// 3. Panggil API: access_token + shop_id di-inject otomatis.
+const client = await connector.getClient('14701711')
+const orderList = await client.request(
+  { method: 'GET', path: '/api/v2/order/get_order_list', query: [...], body: [], scope: 'shop' },
+  { time_range_field: 'create_time', time_from: 1607235072, time_to: 1608271872 },
+)
+
+// 4. Auto-refresh: sebelum tiap request, bila `expiresAt` mendekat (< refreshThresholdMs,
+//    default 5 mnt) token di-refresh otomatis (single-flight, refresh_token single-use
+//    selalu ditimpa dgn yang baru). Tidak perlu kelola refresh manual.
+//    Jalankan manual bila perlu:
+await connector.refresh('14701711')
+
+// 5. Daftar shop yang sudah connect:
+connector.listShopIds() // ['14701711', ...]
+```
+
+Detail `TokenStore`: interface `{ get/set/delete }`; implementasikan sendiri untuk
+persistensi. Auto-refresh memakai `refresh_token` terbaru di store — jangan hapus
+`refreshToken` dari TokenSet hasil `handleCallback`/`refresh`.
+
 ## Kategori (29) & jumlah API
 
 | Kategori | API | Kategori | API |
