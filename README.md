@@ -1,7 +1,7 @@
 # shopee — Shopee Open Platform API skill
 
-Skill mandiri ala pola `@tts-open-toolkit`/`tts-openapi-*` dari TikTok Shop, tapi
-untuk Shopee Open Platform. Struktur identik dengan skill toolkit:
+Skill mandiri (standalone) untuk Shopee Open Platform. Struktur identik dengan skill
+toolkit:
 
 ```
 shopee/
