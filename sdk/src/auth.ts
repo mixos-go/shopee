@@ -35,8 +35,9 @@ export function buildAuthUrl(
   const signature = signPublic(credentials, path, timestamp)
 
   const q = new URLSearchParams({
-    id: String(credentials.partner_id),
-    token: signature,
+    partner_id: String(credentials.partner_id),
+    timestamp: String(timestamp),
+    sign: signature,
     redirect: redirectUrl,
   })
   if (opts.codeChallenge) q.set('code_challenge', opts.codeChallenge)

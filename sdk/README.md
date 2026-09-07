@@ -69,6 +69,7 @@ const url = buildAuthUrl(
   'https://yourapp.com/callback',
   { environment: 'sandbox' },
 )
+// format: /api/v2/shop/auth_partner?partner_id=…&timestamp=…&sign=…&redirect=…
 // arahkan seller ke `url`; redirect kembali dgn ?code=...&shop_id=...
 ```
 

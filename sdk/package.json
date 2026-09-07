@@ -1,6 +1,6 @@
 {
   "name": "@mixos-go/shopee-sdk",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Generated TypeScript SDK for the Shopee Open Platform API v2 (444 APIs / 29 categories)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

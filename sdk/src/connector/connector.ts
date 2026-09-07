@@ -9,7 +9,7 @@ const TOKEN_SPEC = {
   method: 'POST' as const,
   path: '/api/v2/auth/token/get',
   query: [],
-  body: ['code', 'partner_id', 'shop_id'],
+  body: ['code', 'partner_id'],
   scope: 'shop' as const,
 }
 
@@ -157,9 +157,11 @@ export class ShopeeConnector {
       code,
       partner_id: this.credentials.partner_id,
       shop_id: Number(shopId),
-    })) as ShopeeApiResult<GetAccessTokenResponse>
+    })) as ShopeeApiResult<GetAccessTokenResponse> & GetAccessTokenResponse
 
-    const data = res.response
+    // auth/token/get mengembalikan token FLAT di top-level (tanpa wrapper `response`),
+    // beda dengan API GET lain. Terima keduanya defensif.
+    const data = res.response ?? (res as unknown as GetAccessTokenResponse)
     if (data === undefined || data.access_token === undefined) {
       throw new ShopeeError('Token exchange gagal: response tidak berisi access_token', { body: res })
     }
@@ -181,9 +183,10 @@ export class ShopeeConnector {
       refresh_token: refreshToken,
       partner_id: this.credentials.partner_id,
       shop_id: Number(shopId),
-    })) as ShopeeApiResult<RefreshAccessTokenResponse>
+    })) as ShopeeApiResult<RefreshAccessTokenResponse> & RefreshAccessTokenResponse
 
-    const data = res.response
+    // Flat shape seperti auth/token/get; terima defensif.
+    const data = res.response ?? (res as unknown as RefreshAccessTokenResponse)
     if (data === undefined || data.access_token === undefined) {
       throw new ShopeeError('Refresh gagal: response tidak berisi access_token', { body: res })
     }

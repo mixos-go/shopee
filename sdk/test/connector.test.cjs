@@ -15,10 +15,11 @@ function makeFetch(log) {
     const body = init && init.body ? JSON.parse(init.body) : {}
     if (String(url).includes('/auth/token/get')) {
       const tok = body.code === 'cB' ? 'atB' : 'atA'
-      return { ok: true, status: 200, text: async () => JSON.stringify({ response: { access_token: tok, refresh_token: 'rt-' + tok, expire_in: 14400 }, error: null, request_id: 'r' }) }
+      // Bentuk asli Shopee: FLAT (token di top-level, tanpa wrapper `response`).
+      return { ok: true, status: 200, text: async () => JSON.stringify({ access_token: tok, refresh_token: 'rt-' + tok, expire_in: 14400, shop_id_list: [body.code === 'cB' ? 1002 : 1001], request_id: 'r', error: '', message: '' }) }
     }
     if (String(url).includes('/access_token/get')) {
-      return { ok: true, status: 200, text: async () => JSON.stringify({ response: { access_token: 'at2', refresh_token: 'rt2', expire_in: 14400 }, error: null, request_id: 'r' }) }
+      return { ok: true, status: 200, text: async () => JSON.stringify({ access_token: 'at2', refresh_token: 'rt2', expire_in: 14400, request_id: 'r', error: '', message: '' }) }
     }
     return { ok: true, status: 200, text: async () => JSON.stringify({ response: { ok: true }, error: null, request_id: 'r' }) }
   }
@@ -51,13 +52,14 @@ describe('InMemoryTokenStore', () => {
 })
 
 describe('ShopeeConnector', () => {
-  it('buildAuthUrl: id/token statis + shop_id & state di query redirect', async () => {
+  it('buildAuthUrl: partner_id/timestamp/sign + shop_id & state di query redirect', async () => {
     const log = { urls: [] }
     const c = createShopeeConnector({ credentials, redirectUri, fetch: makeFetch(log) })
     const url = c.buildAuthUrl('1001', 'st1')
     assert.ok(url.includes('partner.shopeemobile.com/api/v2/shop/auth_partner'), url)
-    assert.ok(url.includes('id=123456'), url)
-    assert.ok(url.includes('token='), url)
+    assert.ok(url.includes('partner_id=123456'), url)
+    assert.ok(url.includes('timestamp='), url)
+    assert.ok(url.includes('sign='), url)
     assert.ok(url.includes('redirect='), url)
     assert.ok(url.includes('shop_id%3D1001'), url)
     assert.ok(url.includes('state%3Dst1'), url)
